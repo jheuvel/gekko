@@ -1,4 +1,6 @@
-const EventEmitter = require('events');
+// wraps around a low level trigger and feeds
+// it live market data.
+
 const _ = require('lodash');
 
 const exchangeUtils = require('./exchangeUtils');
@@ -9,9 +11,12 @@ const triggers = require('./triggers');
 // @param api: a gekko broker wrapper instance
 // @param type: type of trigger to wrap
 // @param props: properties to feed to trigger
-class Trigger extends EventEmitter {
-  constructor({api, type, props}) {
-    super();
+class Trigger {
+  constructor({api, type, props, onTrigger}) {
+    this.onTrigger = onTrigger;
+    this.api = api;
+    this.props = props;
+    this.type = type;
 
     this.isLive = true;
 
@@ -19,7 +24,7 @@ class Trigger extends EventEmitter {
     // as soon as the bid goes below trail.
     this.tickerProp = 'bid';
 
-    if(!_.has(triggers, 'type')) {
+    if(!_.has(triggers, type)) {
       throw new Error('Gekko Broker does not know trigger ' + type);
     }
 
@@ -32,14 +37,14 @@ class Trigger extends EventEmitter {
 
   init(err, ticker) {
     if(err) {
-      return this.emit('error', err);
+      return console.log('[GB/trigger] failed to init ticker:', err);
     }
 
-    this.trigger = new triggers[type]({
+    this.trigger = new triggers[this.type]({
       initialPrice: ticker[this.tickerProp],
+      onTrigger: this.propogateTrigger,
       ...this.props
     })
-      .on('trigger', this.propogateTrigger)
 
     this.scheduleFetch();
   }
@@ -61,18 +66,19 @@ class Trigger extends EventEmitter {
     }
     
     if(err) {
-      return this.emit('error', err);
+      return console.log('[GB/trigger] failed to fetch ticker:', err);
     }
 
     this.price = ticker[this.tickerProp];
-    this.trigger.updatePrice(price);
+
+    this.trigger.updatePrice(this.price);
     this.scheduleFetch();
   }
 
   propogateTrigger() {
     this.isLive = false;
-    this.emit('trigger', this.price);
+    this.onTrigger();
   }
 }
 
-module.exports = TrailingStop;
+module.exports = Trigger;

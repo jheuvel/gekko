@@ -161,8 +161,13 @@ class Broker {
     return order;
   }
 
-  createTrigger(type, props) {
-    return new Trigger({api, type, props});
+  createTrigger({type, onTrigger, props}) {
+    return new Trigger({
+      api: this.api,
+      type,
+      props,
+      onTrigger
+    });
   }
 }
 

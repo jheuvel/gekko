@@ -5,7 +5,7 @@ const dirs = util.dirs();
 const moment = require('moment');
 
 const log = require(dirs.core + 'log');
-const Broker = require(dirs.gekko + '/exchange/gekkoBroker');
+const Broker = require(dirs.broker + '/gekkoBroker');
 
 require(dirs.gekko + '/exchange/dependencyCheck');
 
@@ -199,15 +199,14 @@ Trader.prototype.processAdvice = function(advice) {
       this.activeStopTrigger = {
         id: triggerId,
         adviceId: advice.id,
-        instance: new Trigger({
+        instance: this.broker.createTrigger({
           type: trigger.type,
-          trail: trigger.trailValue,
+          onTrigger: this.onStopTrigger,
+          props: {
+            trail: trigger.trailValue,
+          }
         })
       }
-
-      this.activeStopTrigger.on(
-        'trigger', // todo
-      )
     }
 
     amount = this.portfolio.currency / this.price * 0.95;
@@ -358,6 +357,22 @@ Trader.prototype.createOrder = function(side, amount, advice, id) {
       });
     })
   });
+}
+
+Trader.prototype.onStopTrigger = function() {
+  this.deferredEmit('triggerFired', {
+    id: this.activeStopTrigger.id,
+    date: moment()
+  });
+
+  const adviceMock = {
+    recommendation: 'short',
+    id: this.activeStopTrigger.adviceId
+  }
+
+  delete this.activeStopTrigger;
+
+  this.processAdvice(adviceMock);
 }
 
 Trader.prototype.cancelOrder = function(id, advice, next) {
