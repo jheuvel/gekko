@@ -341,7 +341,7 @@ Trader.prototype.createOrder = function(side, amount, advice, id) {
             initialPrice: this.price,
             type: 'trialingStop',
             properties: {
-              trail: advicetrigger.trailValue
+              trail: trigger.trailValue
             }
           });
 
