@@ -68,9 +68,9 @@ class Trigger {
     clearTimeout(this.timout);
   }
 
-  propogateTrigger() {
+  propogateTrigger(payload) {
     this.isLive = false;
-    this.onTrigger();
+    this.onTrigger(payload);
   }
 }
 
