@@ -51,3 +51,6 @@ private-*.toml
 SECRET-api-keys.json
 exchange/nusadua
 web/vue/dist/UIconfig.js
+
+package-lock.json
+exchange/package-lock.json
